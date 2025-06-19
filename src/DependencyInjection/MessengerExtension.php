@@ -42,6 +42,9 @@ final class MessengerExtension extends ConfigurableExtension
 
     private function registerMessengerConfiguration(array $config, ContainerBuilder $container): void
     {
+        if (empty($config['failure_transport'])) {
+            $container->removeDefinition('messenger.failure_transport');
+        }
         if (empty($config['transports'])) {
             $container->removeDefinition('messenger.transport.symfony_serializer');
             $container->removeDefinition('messenger.transport.amqp.factory');
@@ -107,7 +110,7 @@ final class MessengerExtension extends ConfigurableExtension
 
             $transportDefinition = (new Definition(TransportInterface::class))
                 ->setFactory([new Reference('messenger.transport_factory'), 'createTransport'])
-                ->setArguments([$transport['dsn'], $transport['options']])
+                ->setArguments([$transport['dsn'], $transport['retry_strategy'], $transport['options']])
                 ->addTag('messenger.receiver', ['alias' => $name]);
             $container->setDefinition($transportId = 'messenger.transport.'.$name, $transportDefinition);
             $senderAliases[$name] = $transportId;
